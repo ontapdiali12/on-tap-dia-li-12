@@ -148,7 +148,10 @@ function drawQ(){
   const {lesson:l,qs,i}=session,q=qs[i];
   let body="",label=i<21?"Phần I • Nhiều lựa chọn":i<25?"Phần II • Đúng/Sai":"Phần III • Trả lời ngắn";
   if(q.type==="mcq"){
-    body=`<div class="answers">${q.a.map((x,j)=>`<button class="answer ${session.answers[i]===j?"selected":""}" data-i="${j}"><strong class="choice-letter">${"ABCD"[j]}.</strong><span class="choice-gap">&nbsp;</span><span class="choice-text">${esc(x)}</span></button>`).join("")}</div>`;
+    body=`<div class="answers">${q.a.map((x,j)=>`<button class="answer ${session.answers[i]===j?"selected":""}" data-i="${j}">
+  <span class="fake-radio" aria-hidden="true"></span>
+  <span class="answer-line"><strong class="choice-letter">${"ABCD"[j]}.</strong> <span class="choice-text">${esc(x)}</span></span>
+</button>`).join("")}</div>`;
   }else if(q.type==="tf"){
     body=`${renderParts(q.intro)}${q.statements.map((s,j)=>`<div class="tfrow"><div class="tfstatement"><b>${String.fromCharCode(97+j)})</b> ${esc(s.text)}</div><div class="tfopts"><label><input type="radio" name="tf${j}" value="1" ${Array.isArray(session.answers[i])&&session.answers[i][j]===true?"checked":""}> Đúng</label><label><input type="radio" name="tf${j}" value="0" ${Array.isArray(session.answers[i])&&session.answers[i][j]===false?"checked":""}> Sai</label></div></div>`).join("")}`;
   }else{
