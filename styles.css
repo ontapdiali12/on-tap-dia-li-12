@@ -68,63 +68,120 @@ main{max-width:1050px;margin:auto;padding:0 18px 70px}.hero{text-align:center;pa
 }
 
 
-/* Hiển thị đáp án: A. Nội dung — chữ cái đậm, tách rõ */
+/* ===== GIAO DIỆN CÂU HỎI / ĐÁP ÁN DẠNG GỌN ===== */
+.qbox{
+  background:#fff;
+  border:1px solid var(--line);
+  border-radius:24px;
+  padding:20px;
+}
+.qbox h2{
+  font-size:clamp(1.35rem,4.3vw,1.95rem);
+  line-height:1.45;
+  font-weight:850;
+  margin:16px 0 20px;
+}
+.answers{
+  display:grid;
+  gap:12px;
+}
 .answer{
-  display:grid !important;
-  grid-template-columns:auto 1fr;
-  align-items:start !important;
-  column-gap:10px !important;
-}
-.choice-letter{
-  flex:none !important;
-  min-width:34px !important;
-  width:auto !important;
-  height:auto !important;
-  border:0 !important;
-  border-radius:0 !important;
-  display:inline-block !important;
-  font-weight:900 !important;
-  font-size:1.15em !important;
-  line-height:1.5 !important;
-}
-.choice-text{
-  display:block;
-  line-height:1.5;
-}
-
-
-/* FIX 2: Tách tuyệt đối chữ cái đáp án khỏi nội dung */
-.answer{
+  width:100%;
   display:flex !important;
-  align-items:flex-start !important;
+  align-items:center !important;
   justify-content:flex-start !important;
   text-align:left !important;
-  gap:0 !important;
-  white-space:normal !important;
+  gap:12px !important;
+  padding:16px 18px !important;
+  min-height:70px;
+  background:#fff;
+  border:2px solid #e3e7ea !important;
+  border-radius:18px !important;
+  font-size:clamp(1.05rem,3.6vw,1.25rem) !important;
+  line-height:1.45 !important;
+  cursor:pointer;
 }
-.answer .choice-letter{
-  display:inline-block !important;
-  flex:0 0 auto !important;
+.answer:hover{
+  border-color:#b9c7cf !important;
+}
+.answer.selected{
+  border-color:#0aaa7f !important;
+  background:#ecfff8 !important;
+  box-shadow:0 0 0 1px #0aaa7f inset;
+}
+.fake-radio{
+  width:24px;
+  height:24px;
+  flex:0 0 24px;
+  border:3px solid #d8dde2;
+  border-radius:50%;
+  background:#fff;
+  position:relative;
+}
+.answer.selected .fake-radio{
+  border-color:#0aaa7f;
+}
+.answer.selected .fake-radio::after{
+  content:"";
+  position:absolute;
+  width:10px;
+  height:10px;
+  border-radius:50%;
+  background:#0aaa7f;
+  top:50%;
+  left:50%;
+  transform:translate(-50%,-50%);
+}
+.answer-line{
+  display:inline;
+  flex:1 1 auto;
+  min-width:0;
+}
+.choice-letter{
+  display:inline !important;
   width:auto !important;
-  min-width:30px !important;
+  min-width:0 !important;
   height:auto !important;
   margin:0 !important;
   padding:0 !important;
   border:0 !important;
   border-radius:0 !important;
+  font-size:1em !important;
+  line-height:inherit !important;
   font-weight:900 !important;
-  font-size:1.08em !important;
-  line-height:1.5 !important;
 }
-.answer .choice-gap{
-  display:inline-block !important;
-  width:8px !important;
-  flex:0 0 8px !important;
-}
-.answer .choice-text{
-  display:inline-block !important;
-  flex:1 1 auto !important;
-  min-width:0 !important;
-  line-height:1.5 !important;
+.choice-text{
+  display:inline !important;
   font-weight:500 !important;
+}
+.answer.selected .choice-letter,
+.answer.selected .choice-text{
+  font-weight:800 !important;
+}
+.quiz-actions{
+  display:flex;
+  gap:12px;
+  justify-content:center !important;
+}
+.quiz-actions button{
+  min-width:145px;
+  min-height:54px;
+  border-radius:16px;
+  font-weight:800;
+}
+@media(max-width:600px){
+  .qbox{padding:16px 14px;border-radius:22px}
+  .answer{
+    gap:10px !important;
+    padding:15px 14px !important;
+    min-height:66px;
+    border-radius:17px !important;
+  }
+  .fake-radio{
+    width:22px;height:22px;flex-basis:22px;
+  }
+  .quiz-actions button{
+    min-width:0;
+    flex:1;
+  }
 }
