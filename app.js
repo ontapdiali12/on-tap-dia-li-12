@@ -2,7 +2,7 @@
 const app=document.querySelector("#app"),$=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 let student=JSON.parse(localStorage.getItem("geo_student")||'{"name":"","className":""}');
 let results=JSON.parse(localStorage.getItem("geo_natural_results")||"[]");
-let session=null, submitting=false;
+let session=null, submitting=false, quizTimer=null;
 document.addEventListener("click",e=>{if(e.target.dataset.r)location.hash=e.target.dataset.r});window.addEventListener("hashchange",render);
 
 function esc(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]))}
@@ -19,7 +19,123 @@ function lesson(id,mode){const l=GEO_LESSONS.find(x=>x.id===id);if(!l)return hom
 }else{practiceIntro(l)}}
 function practiceIntro(l){app.innerHTML=`${identity()}<div class="pagehead"><div>${l.short}</div><h1>${l.title}</h1><p>Đề ôn gồm <b>28 câu</b>: 21 câu nhiều lựa chọn, 4 câu đúng/sai, 3 câu trả lời ngắn. Tổng cộng 40 lệnh, mỗi lệnh đúng 0,25 điểm = 10 điểm.</p></div><div class="panel"><p>Ngân hàng nguồn của bài: <b>${l.bank.mcq.length}</b> câu nhiều lựa chọn, <b>${l.bank.tf.length}</b> câu đúng/sai, <b>${l.bank.short.length}</b> câu trả lời ngắn.</p><button class="primary" onclick="startQuiz('${l.id}')">Bắt đầu làm bài</button></div>`;bindIdentity()}
 function renderParts(parts){return parts.map(x=>x.type==="text"?`<p>${esc(x.text)}</p>`:`<div class="prompt-table"><table>${x.rows.map((r,i)=>`<tr>${r.map(c=>`<${i===0?"th":"td"}>${esc(c)}</${i===0?"th":"td"}>`).join("")}</tr>`).join("")}</table></div>`).join("")}
-window.startQuiz=function(id){if(!student.name||!student.className){alert("Vui lòng nhập Họ tên và Lớp trước khi làm bài.");return}const l=GEO_LESSONS.find(x=>x.id===id);const qs=[...l.quiz.mcq.map(x=>({type:"mcq",...x})),...l.quiz.tf.map(x=>({type:"tf",...x})),...l.quiz.short.map(x=>({type:"short",...x}))];submitting=false;session={lesson:l,qs,i:0,answers:Array(qs.length).fill(null),attemptId:(crypto.randomUUID?crypto.randomUUID():(Date.now()+"-"+Math.random().toString(36).slice(2)))};drawQ()}
+
+function shuffleCopy(arr){
+  const a=[...(arr||[])];
+  for(let i=a.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [a[i],a[j]]=[a[j],a[i]];
+  }
+  return a;
+}
+function questionKey(q,fallback){
+  return String(q.id || q.q || (q.prompt||[]).map(x=>x.text||"").join(" ") || fallback);
+}
+function pickQuestionsWithMemory(lessonId,type,pool,count){
+  const key=`geo_seen_${lessonId}_${type}`;
+  let seen=[];
+  try{seen=JSON.parse(localStorage.getItem(key)||"[]")}catch(e){seen=[]}
+  const seenSet=new Set(seen);
+  const tagged=(pool||[]).map((q,i)=>({q,k:questionKey(q,`${type}_${i}`)}));
+  const fresh=shuffleCopy(tagged.filter(x=>!seenSet.has(x.k)));
+  const old=shuffleCopy(tagged.filter(x=>seenSet.has(x.k)));
+  const chosen=[...fresh,...old].slice(0,Math.min(count,tagged.length));
+  const chosenKeys=chosen.map(x=>x.k);
+  const updated=[...new Set([...seen,...chosenKeys])];
+  localStorage.setItem(key,JSON.stringify(updated.length>=tagged.length?chosenKeys:updated));
+  return chosen.map(x=>x.q);
+}
+
+
+function shuffleMCQOptions(q){
+  if(!q || !Array.isArray(q.a) || q.a.length!==4) return q;
+  const indexed=q.a.map((text,i)=>({text,i}));
+  for(let i=indexed.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [indexed[i],indexed[j]]=[indexed[j],indexed[i]];
+  }
+  const correctOld=q.correct;
+  const correctNew=indexed.findIndex(x=>x.i===correctOld);
+  return {...q,a:indexed.map(x=>x.text),correct:correctNew};
+}
+
+
+function isAnswered(q,a){
+  if(q.type==="mcq") return Number.isInteger(a);
+  if(q.type==="tf") return Array.isArray(a) && q.statements.every((_,j)=>typeof a[j]==="boolean");
+  if(q.type==="short") return String(a??"").trim()!=="";
+  return false;
+}
+function currentAnswered(){
+  if(!session) return false;
+  saveShort();
+  return isAnswered(session.qs[session.i],session.answers[session.i]);
+}
+function allAnswered(){
+  if(!session) return false;
+  saveShort();
+  return session.qs.every((q,i)=>isAnswered(q,session.answers[i]));
+}
+function remainingSeconds(){
+  return session&&session.endsAt ? Math.max(0,Math.ceil((session.endsAt-Date.now())/1000)) : 0;
+}
+function formatTime(sec){
+  const m=Math.floor(sec/60), s=sec%60;
+  return `${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`;
+}
+function updateTimerDisplay(){
+  if(!session||!session.endsAt) return;
+  const sec=remainingSeconds();
+  const el=$("#quizTimer");
+  if(el){
+    el.textContent=formatTime(sec);
+    el.classList.toggle("timer-warn",sec<=300&&sec>60);
+    el.classList.toggle("timer-danger",sec<=60);
+  }
+  if(sec<=600 && !session.warn10){session.warn10=true;alert("Còn 10 phút làm bài.");}
+  if(sec<=300 && !session.warn5){session.warn5=true;alert("Còn 5 phút làm bài.");}
+  if(sec<=60 && !session.warn1){session.warn1=true;alert("Còn 1 phút. Hệ thống sẽ tự động nộp khi hết giờ.");}
+  if(sec<=0 && !submitting){
+    clearInterval(quizTimer); quizTimer=null;
+    alert("Đã hết 45 phút. Hệ thống tự động nộp bài.");
+    finishQuiz(true);
+  }
+}
+function startQuizTimer(){
+  if(quizTimer) clearInterval(quizTimer);
+  updateTimerDisplay();
+  quizTimer=setInterval(updateTimerDisplay,1000);
+}
+function unansweredMessage(q){
+  if(q.type==="tf") return "Em cần chọn Đúng hoặc Sai cho đủ cả 4 ý trước khi sang câu tiếp theo.";
+  if(q.type==="short") return "Em cần nhập câu trả lời trước khi sang câu tiếp theo.";
+  return "Em cần chọn một đáp án trước khi sang câu tiếp theo.";
+}
+
+window.startQuiz=function(id){
+  if(!student.name||!student.className){
+    alert("Vui lòng nhập Họ tên và Lớp trước khi làm bài.");return
+  }
+  const l=GEO_LESSONS.find(x=>x.id===id);
+
+  const mcqPool=(l.bank&&l.bank.mcq&&l.bank.mcq.length)?l.bank.mcq:l.quiz.mcq;
+  const tfPool=(l.bank&&l.bank.tf&&l.bank.tf.length)?l.bank.tf:l.quiz.tf;
+  const shortPool=(l.bank&&l.bank.short&&l.bank.short.length)?l.bank.short:l.quiz.short;
+
+  const mcq=pickQuestionsWithMemory(l.id,"mcq",mcqPool,21).map(x=>({type:"mcq",...shuffleMCQOptions(x)}));
+  const tf=pickQuestionsWithMemory(l.id,"tf",tfPool,4).map(x=>({type:"tf",...x}));
+  const short=pickQuestionsWithMemory(l.id,"short",shortPool,3).map(x=>({type:"short",...x}));
+
+  // Giữ đúng cấu trúc 3 phần của đề, nhưng mỗi lượt lấy câu khác từ ngân hàng.
+  const qs=[...mcq,...tf,...short];
+
+  submitting=false;
+  session={
+    lesson:l,qs,i:0,answers:Array(qs.length).fill(null),
+    attemptId:(crypto.randomUUID?crypto.randomUUID():(Date.now()+"-"+Math.random().toString(36).slice(2))),endsAt:Date.now()+45*60*1000,warn10:false,warn5:false,warn1:false
+  };
+  drawQ();startQuizTimer()
+}
 
 function shortPromptText(q){
   const a=(q.q||"").trim();
@@ -28,7 +144,62 @@ function shortPromptText(q){
   return b;
 }
 
-function drawQ(){const {lesson:l,qs,i}=session,q=qs[i];let body="",label=i<21?"Phần I • Nhiều lựa chọn":i<25?"Phần II • Đúng/Sai":"Phần III • Trả lời ngắn";if(q.type==="mcq"){body=`<div class="answers">${q.a.map((x,j)=>`<button class="answer ${session.answers[i]===j?"selected":""}" data-i="${j}">${"ABCD"[j]}. ${esc(x)}</button>`).join("")}</div>`}else if(q.type==="tf"){body=`${renderParts(q.intro)}${q.statements.map((s,j)=>`<div class="tfrow"><div><b>${String.fromCharCode(97+j)})</b> ${esc(s.text)}</div><div class="tfopts"><label><input type="radio" name="tf${j}" value="1" ${Array.isArray(session.answers[i])&&session.answers[i][j]===true?"checked":""}> Đúng</label><label><input type="radio" name="tf${j}" value="0" ${Array.isArray(session.answers[i])&&session.answers[i][j]===false?"checked":""}> Sai</label></div></div>`).join("")}` }else{body=`${renderParts(q.prompt)}<div class="short"><input id="shortAnswer" value="${esc(session.answers[i]??"")}" placeholder="Nhập đáp án"></div>`}app.innerHTML=`<div class="quiz"><div class="pagehead"><div>${l.short} • ${label}</div><h1>${l.title}</h1></div><div class="progress"><div style="width:${(i+1)/28*100}%"></div></div><article class="qbox"><div class="qmeta"><span>Câu ${i+1}/28</span><span>Mỗi lệnh đúng 0,25 điểm</span></div><h2>${q.type==="mcq"?esc(q.q):q.type==="tf"?"Câu đúng/sai":esc(q.prompt?.[0]?.text||"Trả lời ngắn")}</h2>${body}<div class="actions" style="justify-content:flex-start"><button class="secondary" id="prevBtn" ${i===0?"disabled":""}>← Trước</button>${i<27?'<button class="primary" id="nextBtn">Tiếp →</button>':'<button class="primary" id="submitBtn">Nộp bài</button>'}</div></article></div>`;if(q.type==="mcq")$$(".answer").forEach(b=>b.onclick=()=>{session.answers[i]=+b.dataset.i;drawQ()});if(q.type==="tf")q.statements.forEach((_,j)=>$$(`input[name="tf${j}"]`).forEach(inp=>inp.onchange=()=>{let a=Array.isArray(session.answers[i])?[...session.answers[i]]:[];a[j]=inp.value==="1";session.answers[i]=a}));if(q.type==="short")$("#shortAnswer").oninput=e=>session.answers[i]=e.target.value;$("#prevBtn").onclick=()=>{saveShort();session.i--;drawQ()};if($("#nextBtn"))$("#nextBtn").onclick=()=>{saveShort();session.i++;drawQ()};if($("#submitBtn"))$("#submitBtn").onclick=finishQuiz}
+function drawQ(){
+  const {lesson:l,qs,i}=session,q=qs[i];
+  let body="",label=i<21?"Phần I • Nhiều lựa chọn":i<25?"Phần II • Đúng/Sai":"Phần III • Trả lời ngắn";
+  if(q.type==="mcq"){
+    body=`<div class="answers">${q.a.map((x,j)=>`<button class="answer ${session.answers[i]===j?"selected":""}" data-i="${j}"><span class="choice-letter">${"ABCD"[j]}</span><span>${esc(x)}</span></button>`).join("")}</div>`;
+  }else if(q.type==="tf"){
+    body=`${renderParts(q.intro)}${q.statements.map((s,j)=>`<div class="tfrow"><div class="tfstatement"><b>${String.fromCharCode(97+j)})</b> ${esc(s.text)}</div><div class="tfopts"><label><input type="radio" name="tf${j}" value="1" ${Array.isArray(session.answers[i])&&session.answers[i][j]===true?"checked":""}> Đúng</label><label><input type="radio" name="tf${j}" value="0" ${Array.isArray(session.answers[i])&&session.answers[i][j]===false?"checked":""}> Sai</label></div></div>`).join("")}`;
+  }else{
+    body=`${renderParts(q.prompt)}<div class="short"><input id="shortAnswer" value="${esc(session.answers[i]??"")}" placeholder="Nhập đáp án"></div>`;
+  }
+
+  const answered=session.answers.filter((a,k)=>isAnswered(qs[k],a)).length;
+  app.innerHTML=`<div class="quiz">
+    <div class="quiz-topbar">
+      <div><b>Câu ${i+1}/28</b><span class="answered-count">Đã trả lời ${answered}/28</span></div>
+      <div class="timer-wrap">⏱ Còn <strong id="quizTimer">${formatTime(remainingSeconds())}</strong></div>
+    </div>
+    <div class="pagehead"><div>${l.short} • ${label}</div><h1>${l.title}</h1></div>
+    <div class="progress"><div style="width:${(i+1)/28*100}%"></div></div>
+    <article class="qbox">
+      <div class="qmeta"><span class="question-number">Câu ${i+1}</span><span>Mỗi lệnh đúng 0,25 điểm</span></div>
+      <h2>${q.type==="mcq"?esc(q.q):q.type==="tf"?"Chọn Đúng hoặc Sai cho từng ý":esc(q.prompt?.[0]?.text||"Trả lời ngắn")}</h2>
+      ${body}
+      <div class="actions quiz-actions">
+        <button class="secondary" id="prevBtn" ${i===0?"disabled":""}>← Câu trước</button>
+        ${i<27?'<button class="primary" id="nextBtn">Câu tiếp →</button>':'<button class="primary" id="submitBtn">Nộp bài</button>'}
+      </div>
+    </article>
+  </div>`;
+
+  updateTimerDisplay();
+
+  if(q.type==="mcq") $$(".answer").forEach(b=>b.onclick=()=>{
+    session.answers[i]=+b.dataset.i;
+    drawQ();
+  });
+  if(q.type==="tf") q.statements.forEach((_,j)=>$$(`input[name="tf${j}"]`).forEach(inp=>inp.onchange=()=>{
+    let a=Array.isArray(session.answers[i])?[...session.answers[i]]:[];
+    a[j]=inp.value==="1"; session.answers[i]=a;
+    updateTimerDisplay();
+  }));
+  if(q.type==="short") $("#shortAnswer").oninput=e=>session.answers[i]=e.target.value;
+
+  $("#prevBtn").onclick=()=>{saveShort();session.i--;drawQ()};
+  if($("#nextBtn")) $("#nextBtn").onclick=()=>{
+    saveShort();
+    if(!currentAnswered()){alert(unansweredMessage(q));return}
+    session.i++;drawQ()
+  };
+  if($("#submitBtn")) $("#submitBtn").onclick=()=>{
+    saveShort();
+    if(!currentAnswered()){alert(unansweredMessage(q));return}
+    if(!allAnswered()){alert("Em còn câu chưa trả lời. Hãy kiểm tra lại trước khi nộp bài.");return}
+    if(confirm("Em đã trả lời đủ 28 câu. Em có chắc chắn muốn nộp bài không?")) finishQuiz(false);
+  };
+}
 function saveShort(){if(session&&session.qs[session.i].type==="short"&&$("#shortAnswer"))session.answers[session.i]=$("#shortAnswer").value}
 function norm(v){return String(v??"").trim().toLowerCase().replace(",",".").replace(/\s+/g,"")}
 
@@ -80,7 +251,8 @@ function reviewQuiz(){
   <div class="actions"><button class="primary" onclick="openLesson('${session.lesson.id}','practice')">Làm lại</button><button class="secondary" data-r="practice">← Danh sách bài</button></div>`;
 }
 
-async function finishQuiz(){
+async function finishQuiz(autoSubmit=false){
+  if(quizTimer){clearInterval(quizTimer);quizTimer=null;}
   if(submitting) return;
   submitting=true;
   saveShort();
@@ -133,7 +305,7 @@ async function finishQuiz(){
 
   app.innerHTML=`<div class="quiz"><article class="panel result-panel" style="text-align:center">
     <div class="score">${String(score).replace(".",",")}/10</div>
-    <h1>Hoàn thành ${session.lesson.short}</h1>
+    <h1>Hoàn thành ${session.lesson.short}</h1>${autoSubmit?`<p class="autosubmit-note">⏱ Bài đã được tự động nộp khi hết 45 phút.</p>`:""}
     <p>Bạn đúng <b>${correct}/${commands}</b> lệnh.</p>
     <div class="actions">
       <button class="primary" onclick="reviewQuiz()">🔎 Xem đáp án chi tiết</button>
