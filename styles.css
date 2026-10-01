@@ -1,68 +1,356 @@
 
-:root{--bg:#f4fcf9;--text:#172033;--muted:#667085;--brand:#0a9f70;--line:#e4ece9}
-*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;font-family:Inter,Segoe UI,Arial,sans-serif;color:var(--text);background:linear-gradient(#fff,#f2fcf8)}
-button,input{font:inherit}header{position:sticky;top:0;z-index:30;background:#fffffff0;backdrop-filter:blur(12px);border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:15px;padding:15px 22px}.brand{font-weight:900;font-size:22px;color:var(--brand)}nav{display:flex;gap:7px;flex-wrap:wrap}nav button,.secondary{border:1px solid var(--line);background:#fff;padding:10px 12px;border-radius:12px;font-weight:800;cursor:pointer}.primary{border:0;background:var(--brand);color:#fff;padding:11px 16px;border-radius:13px;font-weight:850;cursor:pointer}
-main{max-width:1050px;margin:auto;padding:0 18px 70px}.hero{text-align:center;padding:62px 0 32px}.hero h1{font-size:clamp(42px,7vw,72px);margin:0}.hero .globe{font-size:56px;margin:13px 0}.hero p{font-size:clamp(19px,3vw,28px);line-height:1.5;color:var(--muted);max-width:800px;margin:auto}.actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:22px}
-.section-title{font-size:29px;margin:36px 0 16px}.cards{display:grid;gap:20px}.card{color:#fff;border-radius:28px;padding:30px;min-height:210px;position:relative;overflow:hidden;box-shadow:0 14px 30px #24384c1b}.card:after{content:"A";position:absolute;right:18px;bottom:-48px;font-size:205px;opacity:.15}.card h2{font-size:clamp(27px,4vw,40px);margin:0 0 20px;max-width:90%;line-height:1.25}.card button{border:0;border-radius:999px;padding:13px 20px;background:#ffffff28;color:#fff;font-weight:800;cursor:pointer}.blue{background:#3f82ee}.green{background:#18b985}.orange{background:#f2a008}.pink{background:#e45a82}
-.pagehead{padding:35px 0 10px}.pagehead h1{font-size:clamp(30px,5vw,45px);margin:4px 0}.pagehead p{color:var(--muted)}.panel{background:#fff;border:1px solid var(--line);border-radius:22px;padding:25px;margin:18px 0}.theory h2{color:#087a57;margin-top:30px}.theory h3{margin-top:22px}.theory p{line-height:1.65}.source-table{overflow:auto;margin:16px 0}.source-table table{border-collapse:collapse;min-width:600px;width:100%}.source-table th,.source-table td{border:1px solid #dce6e2;padding:8px;text-align:left;vertical-align:top}.source-table th{background:#edf8f4}.gallery{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}.gallery img{width:100%;border:1px solid var(--line);border-radius:16px;background:#fff}
-.identity{background:#fff;border:1px solid var(--line);border-radius:18px;padding:16px;display:flex;align-items:center;justify-content:space-between;gap:14px;margin:18px 0}.identity-fields{display:flex;gap:8px;flex-wrap:wrap}.identity input{padding:11px;border:1px solid #d6e2dd;border-radius:11px}
-.quiz{max-width:850px;margin:auto}.progress{height:10px;background:#dfe9e5;border-radius:99px;overflow:hidden}.progress div{height:100%;background:var(--brand)}.qbox{background:#fff;border:1px solid var(--line);border-radius:22px;padding:24px;margin-top:16px}.qmeta{display:flex;justify-content:space-between;gap:10px;color:var(--muted);font-weight:700}.answers{display:grid;gap:10px}.answer{border:2px solid #e4ebe8;background:#fff;border-radius:14px;padding:14px;text-align:left;cursor:pointer}.answer.selected{border-color:#88b9a8;background:#f0faf6}.tfrow{border:1px solid var(--line);border-radius:14px;padding:13px;margin:10px 0}.tfopts{display:flex;gap:18px;margin-top:8px}.short input{width:100%;padding:13px;border:2px solid #dce6e2;border-radius:12px;font-size:17px}.prompt-table{overflow:auto;margin:12px 0}.prompt-table table{border-collapse:collapse;min-width:520px}.prompt-table td,.prompt-table th{border:1px solid #dce6e2;padding:7px}.feedback{padding:13px;background:#eef8f4;border-radius:12px;margin-top:13px}.score{font-size:55px;font-weight:900;color:var(--brand)}.statgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:18px 0}.stat{background:#fff;border:1px solid var(--line);border-radius:17px;padding:17px}.stat b{font-size:32px;display:block;color:var(--brand)}.tablewrap{overflow:auto;border:1px solid var(--line);border-radius:16px;background:#fff}.tablewrap table{width:100%;border-collapse:collapse;min-width:760px}.tablewrap th,.tablewrap td{padding:10px;border-bottom:1px solid var(--line);text-align:left}.tablewrap th{background:#edf8f4}.note{background:#fff8df;border-left:5px solid #e1a000;padding:13px;border-radius:11px}
-@media(max-width:720px){header{align-items:flex-start;flex-direction:column}nav{display:grid;grid-template-columns:repeat(3,1fr);width:100%}nav button{font-size:12px;padding:9px 4px}main{padding:0 13px 50px}.card{padding:24px 21px}.gallery{grid-template-columns:1fr}.identity{align-items:flex-start;flex-direction:column}.identity-fields,.identity input,.identity-fields button{width:100%}.statgrid{grid-template-columns:1fr 1fr}.qbox{padding:18px}}
+const app=document.querySelector("#app"),$=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+let student=JSON.parse(localStorage.getItem("geo_student")||'{"name":"","className":""}');
+let results=JSON.parse(localStorage.getItem("geo_natural_results")||"[]");
+let session=null, submitting=false, quizTimer=null;
+document.addEventListener("click",e=>{if(e.target.dataset.r)location.hash=e.target.dataset.r});window.addEventListener("hashchange",render);
 
-.theory-only{margin:18px 0 24px}
-.mindmap{margin:0;background:#fff;border:1px solid var(--line);border-radius:18px;overflow:hidden}
-.mindmap img{display:block;width:100%;height:auto}
-.mindmap figcaption{text-align:center;padding:10px;color:var(--muted);font-weight:700}
-.review-list{display:grid;gap:13px}
-.review-card{background:#fff;border:2px solid var(--line);border-radius:17px;padding:16px}
-.review-ok{border-color:#31ad7e;background:#f3fff9}
-.review-bad{border-color:#e18a9d;background:#fff7f8}
-.review-head{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:9px}
-.review-q{font-weight:750;margin-bottom:9px;line-height:1.5}
-.review-tf{padding:9px 0;border-top:1px dashed #dbe5e1;line-height:1.5}
-.result-panel .actions{justify-content:center}
+function esc(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]))}
+function identity(){return `<div class="identity"><div><b>Thông tin học sinh</b><div style="color:var(--muted)">Nhập trước khi làm bài.</div></div><div class="identity-fields"><input id="sname" placeholder="Họ và tên" value="${esc(student.name)}"><input id="sclass" placeholder="Lớp, VD 12A1" value="${esc(student.className)}"><button id="saveStudent" class="primary">Lưu</button></div></div>`}
+function bindIdentity(){let b=$("#saveStudent");if(!b)return;b.onclick=()=>{student={name:$("#sname").value.trim(),className:$("#sclass").value.trim()};localStorage.setItem("geo_student",JSON.stringify(student));alert("Đã lưu thông tin học sinh.")}}
+function lessonCards(mode){return `<div class="cards">${GEO_LESSONS.map(l=>`<article class="card ${l.color}"><h2>${l.short}. ${l.title}</h2><div class="actions" style="justify-content:flex-start"><button onclick="openLesson('${l.id}','theory')">Ôn lí thuyết ›</button><button onclick="openLesson('${l.id}','practice')">Làm bài 28 câu ›</button></div></article>`).join("")}</div>`}
+function home(){app.innerHTML=`<section class="hero"><h1>ÔN TẬP ĐỊA LÍ 12</h1><div class="globe">🌍</div><p>Chuyên đề: Địa lí tự nhiên Việt Nam — học lí thuyết và luyện tập theo đúng tài liệu giáo viên cung cấp.</p><div class="actions"><button class="primary" data-r="theory">📚 Ôn lí thuyết</button><button class="secondary" data-r="practice">✍️ Bài tập</button></div></section><h2 class="section-title">ĐỊA LÍ TỰ NHIÊN VIỆT NAM</h2>${lessonCards()}`}
+function listing(mode){app.innerHTML=`${mode==="practice"?identity():""}<div class="pagehead"><h1>${mode==="theory"?"📚 Lí thuyết Địa lí tự nhiên":"✍️ Bài tập Địa lí tự nhiên"}</h1><p>${mode==="practice"?"Mỗi bài: 21 câu nhiều lựa chọn + 4 câu đúng/sai + 3 câu trả lời ngắn = 10 điểm.":"Nội dung được lấy từ các tệp Word bạn cung cấp."}</p></div>${lessonCards(mode)}`;bindIdentity()}
+window.openLesson=(id,mode)=>location.hash=`lesson/${id}/${mode}`;
+function lesson(id,mode){const l=GEO_LESSONS.find(x=>x.id===id);if(!l)return home();if(mode==="theory"){
+  app.innerHTML=`<div class="pagehead"><div>${l.short} • Địa lí tự nhiên Việt Nam</div><h1>${l.title}</h1><p>Ôn nhanh bằng sơ đồ tư duy / infographic.</p></div>
+  ${l.images&&l.images.length?`<div class="gallery theory-only">${l.images.map((x,i)=>`<figure class="mindmap"><img src="${x}" loading="lazy" alt="Sơ đồ ${i+1} - ${esc(l.title)}"><figcaption>Sơ đồ ${i+1}</figcaption></figure>`).join("")}</div>`:`<div class="panel"><b>Chưa có sơ đồ tư duy cho bài này.</b></div>`}
+  <div class="actions"><button class="primary" onclick="openLesson('${l.id}','practice')">Làm bài 28 câu</button><button class="secondary" data-r="theory">← Danh sách bài</button></div>`;
+}else{practiceIntro(l)}}
+function practiceIntro(l){app.innerHTML=`${identity()}<div class="pagehead"><div>${l.short}</div><h1>${l.title}</h1><p>Đề ôn gồm <b>28 câu</b>: 21 câu nhiều lựa chọn, 4 câu đúng/sai, 3 câu trả lời ngắn. Tổng cộng 40 lệnh, mỗi lệnh đúng 0,25 điểm = 10 điểm.</p></div><div class="panel"><p>Ngân hàng nguồn của bài: <b>${l.bank.mcq.length}</b> câu nhiều lựa chọn, <b>${l.bank.tf.length}</b> câu đúng/sai, <b>${l.bank.short.length}</b> câu trả lời ngắn.</p><button class="primary" onclick="startQuiz('${l.id}')">Bắt đầu làm bài</button></div>`;bindIdentity()}
+function renderParts(parts){return parts.map(x=>x.type==="text"?`<p>${esc(x.text)}</p>`:`<div class="prompt-table"><table>${x.rows.map((r,i)=>`<tr>${r.map(c=>`<${i===0?"th":"td"}>${esc(c)}</${i===0?"th":"td"}>`).join("")}</tr>`).join("")}</table></div>`).join("")}
+
+function shuffleCopy(arr){
+  const a=[...(arr||[])];
+  for(let i=a.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [a[i],a[j]]=[a[j],a[i]];
+  }
+  return a;
+}
+function questionKey(q,fallback){
+  return String(q.id || q.q || (q.prompt||[]).map(x=>x.text||"").join(" ") || fallback);
+}
+function pickQuestionsWithMemory(lessonId,type,pool,count){
+  const key=`geo_seen_${lessonId}_${type}`;
+  let seen=[];
+  try{seen=JSON.parse(localStorage.getItem(key)||"[]")}catch(e){seen=[]}
+  const seenSet=new Set(seen);
+  const tagged=(pool||[]).map((q,i)=>({q,k:questionKey(q,`${type}_${i}`)}));
+  const fresh=shuffleCopy(tagged.filter(x=>!seenSet.has(x.k)));
+  const old=shuffleCopy(tagged.filter(x=>seenSet.has(x.k)));
+  const chosen=[...fresh,...old].slice(0,Math.min(count,tagged.length));
+  const chosenKeys=chosen.map(x=>x.k);
+  const updated=[...new Set([...seen,...chosenKeys])];
+  localStorage.setItem(key,JSON.stringify(updated.length>=tagged.length?chosenKeys:updated));
+  return chosen.map(x=>x.q);
+}
 
 
-/* Giao diện làm bài 45 phút */
-.quiz-topbar{
-  position:sticky;top:0;z-index:20;
-  display:flex;justify-content:space-between;align-items:center;gap:12px;
-  background:#fff;border:1px solid var(--line);border-radius:16px;
-  padding:12px 16px;margin-bottom:14px;box-shadow:0 4px 18px rgba(0,0,0,.06)
+function shuffleMCQOptions(q){
+  if(!q || !Array.isArray(q.a) || q.a.length!==4) return q;
+  const indexed=q.a.map((text,i)=>({text,i}));
+  for(let i=indexed.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [indexed[i],indexed[j]]=[indexed[j],indexed[i]];
+  }
+  const correctOld=q.correct;
+  const correctNew=indexed.findIndex(x=>x.i===correctOld);
+  return {...q,a:indexed.map(x=>x.text),correct:correctNew};
 }
-.quiz-topbar>div:first-child{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
-.answered-count{color:var(--muted);font-size:.94rem}
-.timer-wrap{font-size:1.05rem;white-space:nowrap}
-#quizTimer{font-size:1.3rem;font-variant-numeric:tabular-nums}
-#quizTimer.timer-warn{font-weight:900;text-decoration:underline}
-#quizTimer.timer-danger{font-weight:900;animation:pulseTimer 1s infinite}
-@keyframes pulseTimer{50%{opacity:.45}}
-.qbox h2{font-size:clamp(1.3rem,3.8vw,1.8rem);line-height:1.45}
-.question-number{
-  display:inline-flex;align-items:center;justify-content:center;
-  min-width:74px;padding:8px 12px;border-radius:999px;font-weight:900
+
+
+function isAnswered(q,a){
+  if(q.type==="mcq") return Number.isInteger(a);
+  if(q.type==="tf") return Array.isArray(a) && q.statements.every((_,j)=>typeof a[j]==="boolean");
+  if(q.type==="short") return String(a??"").trim()!=="";
+  return false;
 }
-.answers{display:grid;gap:12px}
-.answer{
-  width:100%;display:flex;align-items:flex-start;gap:12px;text-align:left;
-  padding:16px;border:2px solid var(--line);border-radius:16px;
-  font-size:clamp(1.05rem,3.2vw,1.22rem);line-height:1.5;background:#fff
+function currentAnswered(){
+  if(!session) return false;
+  saveShort();
+  return isAnswered(session.qs[session.i],session.answers[session.i]);
 }
-.choice-letter{
-  flex:0 0 34px;height:34px;border-radius:50%;display:inline-flex;
-  align-items:center;justify-content:center;font-weight:900;border:2px solid currentColor
+function allAnswered(){
+  if(!session) return false;
+  saveShort();
+  return session.qs.every((q,i)=>isAnswered(q,session.answers[i]));
 }
-.tfrow{padding:16px 0}
-.tfstatement{font-size:1.08rem;line-height:1.55;margin-bottom:10px}
-.tfopts{display:flex;gap:12px;flex-wrap:wrap}
-.tfopts label{padding:10px 18px;border:2px solid var(--line);border-radius:12px;font-weight:800}
-.short input{font-size:1.18rem;padding:15px 16px}
-.quiz-actions{justify-content:space-between;margin-top:22px}
-.autosubmit-note{font-weight:800}
-@media(max-width:600px){
-  .quiz-topbar{padding:10px 12px}
-  .quiz-topbar{align-items:flex-start}
-  .timer-wrap{font-size:.95rem}
-  #quizTimer{font-size:1.15rem}
-  .quiz-actions button{flex:1}
+function remainingSeconds(){
+  return session&&session.endsAt ? Math.max(0,Math.ceil((session.endsAt-Date.now())/1000)) : 0;
 }
+function formatTime(sec){
+  const m=Math.floor(sec/60), s=sec%60;
+  return `${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`;
+}
+function updateTimerDisplay(){
+  if(!session||!session.endsAt) return;
+  const sec=remainingSeconds();
+  const el=$("#quizTimer");
+  if(el){
+    el.textContent=formatTime(sec);
+    el.classList.toggle("timer-warn",sec<=300&&sec>60);
+    el.classList.toggle("timer-danger",sec<=60);
+  }
+  if(sec<=600 && !session.warn10){session.warn10=true;alert("Còn 10 phút làm bài.");}
+  if(sec<=300 && !session.warn5){session.warn5=true;alert("Còn 5 phút làm bài.");}
+  if(sec<=60 && !session.warn1){session.warn1=true;alert("Còn 1 phút. Hệ thống sẽ tự động nộp khi hết giờ.");}
+  if(sec<=0 && !submitting){
+    clearInterval(quizTimer); quizTimer=null;
+    alert("Đã hết 45 phút. Hệ thống tự động nộp bài.");
+    finishQuiz(true);
+  }
+}
+function startQuizTimer(){
+  if(quizTimer) clearInterval(quizTimer);
+  updateTimerDisplay();
+  quizTimer=setInterval(updateTimerDisplay,1000);
+}
+function unansweredMessage(q){
+  if(q.type==="tf") return "Em cần chọn Đúng hoặc Sai cho đủ cả 4 ý trước khi sang câu tiếp theo.";
+  if(q.type==="short") return "Em cần nhập câu trả lời trước khi sang câu tiếp theo.";
+  return "Em cần chọn một đáp án trước khi sang câu tiếp theo.";
+}
+
+window.startQuiz=function(id){
+  if(!student.name||!student.className){
+    alert("Vui lòng nhập Họ tên và Lớp trước khi làm bài.");return
+  }
+  const l=GEO_LESSONS.find(x=>x.id===id);
+
+  const mcqPool=(l.bank&&l.bank.mcq&&l.bank.mcq.length)?l.bank.mcq:l.quiz.mcq;
+  const tfPool=(l.bank&&l.bank.tf&&l.bank.tf.length)?l.bank.tf:l.quiz.tf;
+  const shortPool=(l.bank&&l.bank.short&&l.bank.short.length)?l.bank.short:l.quiz.short;
+
+  const mcq=pickQuestionsWithMemory(l.id,"mcq",mcqPool,21).map(x=>({type:"mcq",...shuffleMCQOptions(x)}));
+  const tf=pickQuestionsWithMemory(l.id,"tf",tfPool,4).map(x=>({type:"tf",...x}));
+  const short=pickQuestionsWithMemory(l.id,"short",shortPool,3).map(x=>({type:"short",...x}));
+
+  // Giữ đúng cấu trúc 3 phần của đề, nhưng mỗi lượt lấy câu khác từ ngân hàng.
+  const qs=[...mcq,...tf,...short];
+
+  submitting=false;
+  session={
+    lesson:l,qs,i:0,answers:Array(qs.length).fill(null),
+    attemptId:(crypto.randomUUID?crypto.randomUUID():(Date.now()+"-"+Math.random().toString(36).slice(2))),endsAt:Date.now()+45*60*1000,warn10:false,warn5:false,warn1:false
+  };
+  drawQ();startQuizTimer()
+}
+
+function shortPromptText(q){
+  const a=(q.q||"").trim();
+  const b=((q.prompt||[]).filter(x=>x.type==="text").map(x=>x.text).join(" ")).trim();
+  if(a && b && a.replace(/\s+/g," ")===b.replace(/\s+/g," ")) return "";
+  return b;
+}
+
+function drawQ(){
+  const {lesson:l,qs,i}=session,q=qs[i];
+  let body="",label=i<21?"Phần I • Nhiều lựa chọn":i<25?"Phần II • Đúng/Sai":"Phần III • Trả lời ngắn";
+  if(q.type==="mcq"){
+    body=`<div class="answers">${q.a.map((x,j)=>`<button class="answer ${session.answers[i]===j?"selected":""}" data-i="${j}"><span class="choice-letter">${"ABCD"[j]}.</span><span class="choice-text">${esc(x)}</span></button>`).join("")}</div>`;
+  }else if(q.type==="tf"){
+    body=`${renderParts(q.intro)}${q.statements.map((s,j)=>`<div class="tfrow"><div class="tfstatement"><b>${String.fromCharCode(97+j)})</b> ${esc(s.text)}</div><div class="tfopts"><label><input type="radio" name="tf${j}" value="1" ${Array.isArray(session.answers[i])&&session.answers[i][j]===true?"checked":""}> Đúng</label><label><input type="radio" name="tf${j}" value="0" ${Array.isArray(session.answers[i])&&session.answers[i][j]===false?"checked":""}> Sai</label></div></div>`).join("")}`;
+  }else{
+    body=`${renderParts(q.prompt)}<div class="short"><input id="shortAnswer" value="${esc(session.answers[i]??"")}" placeholder="Nhập đáp án"></div>`;
+  }
+
+  const answered=session.answers.filter((a,k)=>isAnswered(qs[k],a)).length;
+  app.innerHTML=`<div class="quiz">
+    <div class="quiz-topbar">
+      <div><b>Câu ${i+1}/28</b><span class="answered-count">Đã trả lời ${answered}/28</span></div>
+      <div class="timer-wrap">⏱ Còn <strong id="quizTimer">${formatTime(remainingSeconds())}</strong></div>
+    </div>
+    <div class="pagehead"><div>${l.short} • ${label}</div><h1>${l.title}</h1></div>
+    <div class="progress"><div style="width:${(i+1)/28*100}%"></div></div>
+    <article class="qbox">
+      <div class="qmeta"><span class="question-number">Câu ${i+1}</span><span>Mỗi lệnh đúng 0,25 điểm</span></div>
+      <h2>${q.type==="mcq"?esc(q.q):q.type==="tf"?"Chọn Đúng hoặc Sai cho từng ý":esc(q.prompt?.[0]?.text||"Trả lời ngắn")}</h2>
+      ${body}
+      <div class="actions quiz-actions">
+        <button class="secondary" id="prevBtn" ${i===0?"disabled":""}>← Câu trước</button>
+        ${i<27?'<button class="primary" id="nextBtn">Câu tiếp →</button>':'<button class="primary" id="submitBtn">Nộp bài</button>'}
+      </div>
+    </article>
+  </div>`;
+
+  updateTimerDisplay();
+
+  if(q.type==="mcq") $$(".answer").forEach(b=>b.onclick=()=>{
+    session.answers[i]=+b.dataset.i;
+    drawQ();
+  });
+  if(q.type==="tf") q.statements.forEach((_,j)=>$$(`input[name="tf${j}"]`).forEach(inp=>inp.onchange=()=>{
+    let a=Array.isArray(session.answers[i])?[...session.answers[i]]:[];
+    a[j]=inp.value==="1"; session.answers[i]=a;
+    updateTimerDisplay();
+  }));
+  if(q.type==="short") $("#shortAnswer").oninput=e=>session.answers[i]=e.target.value;
+
+  $("#prevBtn").onclick=()=>{saveShort();session.i--;drawQ()};
+  if($("#nextBtn")) $("#nextBtn").onclick=()=>{
+    saveShort();
+    if(!currentAnswered()){alert(unansweredMessage(q));return}
+    session.i++;drawQ()
+  };
+  if($("#submitBtn")) $("#submitBtn").onclick=()=>{
+    saveShort();
+    if(!currentAnswered()){alert(unansweredMessage(q));return}
+    if(!allAnswered()){alert("Em còn câu chưa trả lời. Hãy kiểm tra lại trước khi nộp bài.");return}
+    if(confirm("Em đã trả lời đủ 28 câu. Em có chắc chắn muốn nộp bài không?")) finishQuiz(false);
+  };
+}
+function saveShort(){if(session&&session.qs[session.i].type==="short"&&$("#shortAnswer"))session.answers[session.i]=$("#shortAnswer").value}
+function norm(v){return String(v??"").trim().toLowerCase().replace(",",".").replace(/\s+/g,"")}
+
+function answerLabelMCQ(q,a){
+  if(a===null||a===undefined) return "Chưa trả lời";
+  return `${"ABCD"[a]}. ${q.a[a]||""}`;
+}
+function correctLabelMCQ(q){
+  return `${"ABCD"[q.correct]}. ${q.a[q.correct]||""}`;
+}
+function tfText(v){return v===true?"Đúng":v===false?"Sai":"Chưa trả lời";}
+function reviewQuiz(){
+  if(!session){location.hash="practice";return}
+  const cards=session.qs.map((q,i)=>{
+    const a=session.answers[i];
+    if(q.type==="mcq"){
+      const ok=a===q.correct;
+      return `<article class="review-card ${ok?"review-ok":"review-bad"}">
+        <div class="review-head"><b>Câu ${i+1}</b><span>${ok?"✅ Đúng":"❌ Sai"}</span></div>
+        <div class="review-q">${esc(q.q)}</div>
+        <div><b>Em chọn:</b> ${esc(answerLabelMCQ(q,a))}</div>
+        <div><b>Đáp án đúng:</b> ${esc(correctLabelMCQ(q))}</div>
+      </article>`;
+    }
+    if(q.type==="tf"){
+      let good=0;
+      const details=q.statements.map((s,j)=>{
+        const chosen=Array.isArray(a)?a[j]:undefined;
+        const ok=chosen===s.correct; if(ok) good++;
+        return `<div class="review-tf"><div><b>${String.fromCharCode(97+j)})</b> ${esc(s.text)}</div>
+          <div>Em chọn: <b>${tfText(chosen)}</b> • Đáp án: <b>${tfText(s.correct)}</b> ${ok?"✅":"❌"}</div></div>`;
+      }).join("");
+      return `<article class="review-card ${good===4?"review-ok":"review-bad"}">
+        <div class="review-head"><b>Câu ${i+1} • Đúng/Sai</b><span>${good}/4 ý đúng = ${(good*.25).toFixed(2).replace(".",",")} điểm</span></div>
+        ${details}
+      </article>`;
+    }
+    const ok=norm(a)===norm(q.answer);
+    const qtext=(q.prompt||[]).filter(x=>x.type==="text").map(x=>x.text).join(" ");
+    return `<article class="review-card ${ok?"review-ok":"review-bad"}">
+      <div class="review-head"><b>Câu ${i+1} • Trả lời ngắn</b><span>${ok?"✅ Đúng":"❌ Sai"}</span></div>
+      <div class="review-q">${esc(qtext)}</div>
+      <div><b>Em trả lời:</b> ${esc(a||"Chưa trả lời")}</div>
+      <div><b>Đáp án đúng:</b> ${esc(q.answer)}</div>
+    </article>`;
+  }).join("");
+  app.innerHTML=`<div class="pagehead"><div>${session.lesson.short}</div><h1>Đáp án chi tiết</h1><p>Đối chiếu câu trả lời với đáp án đúng.</p></div>
+  <div class="review-list">${cards}</div>
+  <div class="actions"><button class="primary" onclick="openLesson('${session.lesson.id}','practice')">Làm lại</button><button class="secondary" data-r="practice">← Danh sách bài</button></div>`;
+}
+
+async function finishQuiz(autoSubmit=false){
+  if(quizTimer){clearInterval(quizTimer);quizTimer=null;}
+  if(submitting) return;
+  submitting=true;
+  saveShort();
+
+  let commands=0,correct=0;
+  session.qs.forEach((q,i)=>{
+    const a=session.answers[i];
+    if(q.type==="mcq"){
+      commands++;
+      if(a===q.correct)correct++;
+    }else if(q.type==="tf"){
+      q.statements.forEach((s,j)=>{
+        commands++;
+        if(Array.isArray(a)&&a[j]===s.correct)correct++;
+      });
+    }else{
+      commands++;
+      if(norm(a)===norm(q.answer))correct++;
+    }
+  });
+
+  const score=Math.round(correct*.25*100)/100;
+  const row={
+    attemptId:session.attemptId,
+    timestamp:new Date().toISOString(),
+    studentName:student.name,
+    className:student.className,
+    lessonId:session.lesson.id,
+    lessonTitle:session.lesson.title,
+    score,correct,commands
+  };
+
+  // Chống lưu trùng trên trình duyệt.
+  const exists=results.some(r=>r.attemptId && r.attemptId===row.attemptId);
+  if(!exists){
+    results.unshift(row);
+    localStorage.setItem("geo_natural_results",JSON.stringify(results));
+  }
+
+  if(RESULT_API_URL){
+    try{
+      await fetch(RESULT_API_URL,{
+        method:"POST",
+        mode:"no-cors",
+        headers:{"Content-Type":"text/plain;charset=utf-8"},
+        body:JSON.stringify(row)
+      });
+    }catch(e){console.warn("Không gửi được kết quả online",e)}
+  }
+
+  app.innerHTML=`<div class="quiz"><article class="panel result-panel" style="text-align:center">
+    <div class="score">${String(score).replace(".",",")}/10</div>
+    <h1>Hoàn thành ${session.lesson.short}</h1>${autoSubmit?`<p class="autosubmit-note">⏱ Bài đã được tự động nộp khi hết 45 phút.</p>`:""}
+    <p>Bạn đúng <b>${correct}/${commands}</b> lệnh.</p>
+    <div class="actions">
+      <button class="primary" onclick="reviewQuiz()">🔎 Xem đáp án chi tiết</button>
+      <button class="secondary" data-r="mine">Kết quả của em</button>
+      <button class="secondary" onclick="openLesson('${session.lesson.id}','practice')">Làm lại</button>
+    </div>
+  </article></div>`;
+}
+function mine(){const mine=results.filter(r=>r.studentName===student.name&&r.className===student.className),avg=mine.length?mine.reduce((s,r)=>s+Number(r.score),0)/mine.length:0;app.innerHTML=`${identity()}<div class="pagehead"><h1>📈 Kết quả của em</h1></div><div class="statgrid"><div class="stat"><b>${mine.length}</b><span>Lượt làm</span></div><div class="stat"><b>${avg.toFixed(2)}</b><span>Điểm TB</span></div></div>${mine.length?`<div class="tablewrap"><table><tr><th>Thời gian</th><th>Bài</th><th>Điểm</th><th>Đúng</th></tr>${mine.map(r=>`<tr><td>${new Date(r.timestamp).toLocaleString("vi-VN")}</td><td>${esc(r.lessonTitle)}</td><td><b>${r.score}/10</b></td><td>${r.correct}/40</td></tr>`).join("")}</table></div>`:"<div class='panel'>Chưa có kết quả.</div>"}`;bindIdentity()}
+async function teacher(){
+  app.innerHTML=`<div class="pagehead"><h1>👩‍🏫 Thống kê giáo viên</h1><p>Nhập khóa giáo viên để xem dữ liệu từ Google Sheets.</p></div>
+  <div class="panel" id="teacherLogin">
+    <label><b>Khóa giáo viên</b></label>
+    <input id="teacherKey" type="password" placeholder="Nhập khóa giáo viên" style="width:100%;max-width:420px;padding:12px;border:1px solid #d6e2dd;border-radius:11px;margin:8px 0">
+    <div><button id="loadTeacher" class="primary">Xem thống kê</button></div>
+  </div>
+  <div id="tv"></div>`;
+
+  $("#loadTeacher").onclick=async()=>{
+    const key=$("#teacherKey").value.trim();
+    if(!key){alert("Vui lòng nhập khóa giáo viên.");return}
+    $("#tv").innerHTML=`<div class="panel">Đang tải dữ liệu...</div>`;
+    let rows=results;
+
+    if(!RESULT_API_URL){
+      $("#tv").innerHTML=`<div class="note"><b>Chưa cấu hình Google Sheets.</b> Hiện chỉ có dữ liệu trên trình duyệt này.</div>`;
+      drawTeacher(results);
+      return;
+    }
+
+    try{
+      const u=RESULT_API_URL+"?action=list&key="+encodeURIComponent(key)+"&t="+Date.now();
+      const x=await fetch(u);
+      const data=await x.json();
+      if(!data.ok){
+        $("#tv").innerHTML=`<div class="note"><b>Không truy cập được:</b> khóa giáo viên không đúng hoặc Apps Script chưa cấu hình.</div>`;
+        return;
+      }
+      rows=data.rows||[];
+      drawTeacher(rows);
+    }catch(e){
+      $("#tv").innerHTML=`<div class="note"><b>Lỗi kết nối Google Sheets.</b> Kiểm tra URL Web App trong config.js và quyền triển khai Apps Script.</div>`;
+    }
+  };
+}
+function drawTeacher(rows){const seen=new Set();rows=(rows||[]).filter(r=>{const k=r.attemptId||`${r.timestamp}|${r.studentName}|${r.className}|${r.lessonId}|${r.score}`;if(seen.has(k))return false;seen.add(k);return true});const students=new Set(rows.map(r=>`${r.className}|${r.studentName}`)).size,classes=new Set(rows.map(r=>r.className).filter(Boolean)).size,avg=rows.length?rows.reduce((s,r)=>s+Number(r.score||0),0)/rows.length:0;$("#tv").innerHTML=`<div class="statgrid"><div class="stat"><b>${students}</b><span>Học sinh</span></div><div class="stat"><b>${rows.length}</b><span>Lượt làm</span></div><div class="stat"><b>${avg.toFixed(2)}</b><span>Điểm TB</span></div><div class="stat"><b>${classes}</b><span>Lớp</span></div></div><div class="tablewrap"><table><tr><th>Thời gian</th><th>Học sinh</th><th>Lớp</th><th>Bài</th><th>Điểm</th></tr>${rows.map(r=>`<tr><td>${new Date(r.timestamp).toLocaleString("vi-VN")}</td><td>${esc(r.studentName)}</td><td>${esc(r.className)}</td><td>${esc(r.lessonTitle)}</td><td><b>${r.score}/10</b></td></tr>`).join("")}</table></div>`}
+function render(){let h=location.hash.slice(1)||"home";if(h==="home")home();else if(h==="theory")listing("theory");else if(h==="practice")listing("practice");else if(h==="mine")mine();else if(h==="teacher")teacher();else if(h.startsWith("lesson/")){let [,id,m]=h.split("/");lesson(id,m)}else home()}
+render();
